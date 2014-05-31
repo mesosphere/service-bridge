@@ -1,0 +1,10 @@
+{
+  "eventType" : "status_update_event",
+  "appId" : "app-123",
+  "taskId" : "app-123-task-8675309",
+  "taskStatus" : "TASK_RUNNING",
+  "host" : "foo.ultramega.co",
+  "slaveId" : "abcd1234",
+  "ports" : [ 9001, 9002, 9003 ],
+  "timestamp" : "2014-05-29T04:15:50Z"
+}
