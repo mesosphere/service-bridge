@@ -4,6 +4,7 @@ import mesosphere.servicebridge.config.Config
 import mesosphere.servicebridge.http.json.MarathonEventProtocol
 
 import mesosphere.servicenet.dsl._
+import mesosphere.servicenet.http.json.DocProtocol
 import mesosphere.servicenet.util.Logging
 import play.api.libs.json._
 import unfiltered.jetty.Http
@@ -14,6 +15,7 @@ import java.io.File
 
 class HTTPServer(implicit val config: Config = Config())
     extends MarathonEventProtocol
+    with DocProtocol
     with Logging {
 
   def updateToDiff(event: MesosStatusUpdateEvent): Seq[Diff] = {

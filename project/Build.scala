@@ -75,9 +75,10 @@ object ServiceBridgeBuild extends Build {
     base = file("http"),
     settings = commonSettings ++ Seq(
       libraryDependencies ++= Seq(
+        "mesosphere"        %% "service-net-http"  % SERVICE_NET_VERSION,
+        "com.typesafe.play" %% "play-json"         % PLAY_JSON_VERSION,
         "net.databinder"    %% "unfiltered-filter" % UNFILTERED_VERSION,
-        "net.databinder"    %% "unfiltered-jetty"  % UNFILTERED_VERSION,
-        "com.typesafe.play" %% "play-json"         % PLAY_JSON_VERSION
+        "net.databinder"    %% "unfiltered-jetty"  % UNFILTERED_VERSION
       )
     )
   ).dependsOn(config)

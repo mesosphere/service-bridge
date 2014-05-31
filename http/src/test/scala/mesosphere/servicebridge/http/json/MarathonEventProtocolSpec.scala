@@ -28,8 +28,6 @@ class MarathonEventProtocolSpec extends Spec {
 
     val json = Json.toJson(event)
 
-    log.info("json: [{}]", Json.prettyPrint(json))
-
     json should equal (
       Json.obj(
         "eventType" -> JsString("status_update_event"),
