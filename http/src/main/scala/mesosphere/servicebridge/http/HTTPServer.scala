@@ -16,6 +16,10 @@ class HTTPServer(implicit val config: Config = Config())
     extends MarathonEventProtocol
     with Logging {
 
+  def updateToDiff(event: MesosStatusUpdateEvent): Seq[Diff] = {
+    ??? // TODO: Generate diffs
+  }
+
   object RestRoutes extends unfiltered.filter.Plan {
     def intent = {
       case req @ Path(Seg("bridge" :: Nil)) => req match {
