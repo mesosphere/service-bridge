@@ -10,3 +10,12 @@ case class MesosStatusUpdateEvent(eventType: String,
                                   slaveId: String,
                                   ports: Iterable[Int],
                                   timestamp: String) extends MarathonEvent
+
+case class TaskHealth(alive: Boolean)
+
+case class MarathonTask(id: String,
+                        host: String,
+                        ports: Seq[Int],
+                        healthCheckResults: Seq[TaskHealth])
+
+case class TaskData(tasks: Seq[MarathonTask])

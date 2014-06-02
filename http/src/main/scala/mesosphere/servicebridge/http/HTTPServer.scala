@@ -1,10 +1,8 @@
 package mesosphere.servicebridge.http
 
 import mesosphere.servicebridge.config.Config
-import mesosphere.servicebridge.http.json.MarathonEventProtocol
+import mesosphere.servicebridge.http.json.MarathonProtocol
 
-import mesosphere.servicenet.dsl._
-import mesosphere.servicenet.http.json.DocProtocol
 import mesosphere.servicenet.util.Logging
 import play.api.libs.json._
 import unfiltered.jetty.Http
@@ -13,14 +11,10 @@ import unfiltered.response._
 
 import java.io.File
 
-class HTTPServer(implicit val config: Config = Config())
-    extends MarathonEventProtocol
-    with DocProtocol
+class HTTPServer(handleEvent: MesosStatusUpdateEvent => Unit = _ => ())(
+  implicit val config: Config = Config())
+    extends MarathonProtocol
     with Logging {
-
-  def updateToDiff(event: MesosStatusUpdateEvent): Seq[Diff] = {
-    ??? // TODO: Generate diffs
-  }
 
   object RestRoutes extends unfiltered.filter.Plan {
     def intent = {
@@ -31,7 +25,10 @@ class HTTPServer(implicit val config: Config = Config())
             case JsSuccess(e, path) if e.eventType == "status_update_event" =>
               val eventJson = Json.toJson(e).toString
               log.info(s"Received status update event [$eventJson]")
-              // TODO: patch the servicenet doc with the event data
+
+              // delegate handling of Marathon event
+              handleEvent(e)
+
               ResponseHeader("Content-Type", Set("application/json")) ~>
                 ResponseString(eventJson)
 
