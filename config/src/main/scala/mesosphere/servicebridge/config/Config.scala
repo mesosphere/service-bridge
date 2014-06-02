@@ -21,10 +21,13 @@ import java.io.File
   * @param httpPort The port on which to serve web traffic. (Properties:
   *                 `http.port` or `svcbridge.http.port` or
   *                 `mesosphere.servicebridge.http.port`)
+  * @param marathon A connection string of the form
+  *                 <host>:<port>,<host>:<port>, ...
   */
-case class Config(httpPort: Int) extends Logging {
+case class Config(httpPort: Int, marathon: String) extends Logging {
 
   val propertyLines: Seq[String] = Seq(
+    s"svcbridge.marathon=$marathon",
     s"http.port=$httpPort"
   )
 
@@ -76,6 +79,7 @@ object Config extends Logging {
     */
   def apply(properties: Map[String, String] = merged): Config =
     Config(
-      httpPort = properties.get("http.port").map(_.toInt).getOrElse(9000)
+      httpPort = properties.get("http.port").map(_.toInt).getOrElse(9000),
+      marathon = properties.get("marathon").getOrElse("localhost:2181")
     )
 }

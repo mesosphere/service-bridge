@@ -164,8 +164,8 @@ class MarathonProtocolSpec extends Spec {
     """
 
     val json = Json.parse(rawJson)
-    val taskData = json.validate[TaskData]
-    taskData.get.tasks should have size (2)
+    val readResult = json.validate[TaskData]
+    readResult.get.tasks should have size (2)
   }
 
 }
