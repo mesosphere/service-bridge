@@ -3,7 +3,7 @@ package mesosphere.servicebridge.http.json
 import mesosphere.servicebridge.http.{
   MarathonTask,
   MesosStatusUpdateEvent,
-  TaskData
+  TaskData,
   TaskHealth
 }
 
