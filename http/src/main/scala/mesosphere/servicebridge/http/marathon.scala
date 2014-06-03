@@ -14,6 +14,7 @@ case class MesosStatusUpdateEvent(eventType: String,
 case class TaskHealth(alive: Boolean)
 
 case class MarathonTask(id: String,
+                        appId: String,
                         host: String,
                         ports: Seq[Int],
                         healthCheckResults: Seq[TaskHealth])
