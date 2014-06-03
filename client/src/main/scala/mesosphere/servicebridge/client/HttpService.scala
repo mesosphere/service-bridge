@@ -1,7 +1,7 @@
 package mesosphere.servicebridge.client
 
+import java.net.URL
+
 trait HttpService {
-  val host: String
-  val port: Int
-  def baseUrl: String = s"http://${host}:${port}"
+  def baseUrls: Seq[URL]
 }
