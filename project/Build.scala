@@ -67,7 +67,13 @@ object ServiceBridgeBuild extends Build {
   lazy val daemon = Project(
     id = subproject("daemon"),
     base = file("daemon"),
-    settings = commonSettings
+    settings = commonSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "com.typesafe.akka" %% "akka-actor"     % AKKA_VERSION,
+        "com.typesafe.akka" %% "akka-slf4j"     % AKKA_VERSION,
+        "com.typesafe.akka" %% "akka-testkit"   % AKKA_VERSION % "test"
+      )
+    )
   ).dependsOn(config, http)
 
   lazy val http = Project(
@@ -75,8 +81,10 @@ object ServiceBridgeBuild extends Build {
     base = file("http"),
     settings = commonSettings ++ Seq(
       libraryDependencies ++= Seq(
-        "mesosphere"        %% "service-net-http"  % SERVICE_NET_VERSION,
-        "com.typesafe.play" %% "play-json"         % PLAY_JSON_VERSION,
+        "mesosphere"        %% "service-net-http"  % SERVICE_NET_VERSION
+                    exclude("com.typesafe", "config"),
+        "com.typesafe.play" %% "play-json"         % PLAY_JSON_VERSION
+            exclude("com.typesafe", "config"),
         "net.databinder"    %% "unfiltered-filter" % UNFILTERED_VERSION,
         "net.databinder"    %% "unfiltered-jetty"  % UNFILTERED_VERSION
       )
