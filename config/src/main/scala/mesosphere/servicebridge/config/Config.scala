@@ -24,7 +24,9 @@ import java.io.File
   * @param marathon A connection string of the form
   *                 <host>:<port>,<host>:<port>, ...
   */
-case class Config(httpPort: Int, marathon: String) extends Logging {
+case class Config(httpPort: Int,
+                  marathon: String,
+                  mesos: String) extends Logging {
 
   val propertyLines: Seq[String] = Seq(
     s"svcbridge.marathon=$marathon",
@@ -80,6 +82,7 @@ object Config extends Logging {
   def apply(properties: Map[String, String] = merged): Config =
     Config(
       httpPort = properties.get("http.port").map(_.toInt).getOrElse(9000),
-      marathon = properties.get("marathon").getOrElse("localhost:2181")
+      marathon = properties.get("marathon").getOrElse("localhost:2181"),
+      mesos = properties.get("mesos").getOrElse("localhost:5050")
     )
 }

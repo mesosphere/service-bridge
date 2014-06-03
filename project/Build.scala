@@ -63,12 +63,12 @@ object ServiceBridgeBuild extends Build {
     base = file("client"),
     settings = commonSettings ++ Seq(
       libraryDependencies ++= Seq(
-        "com.typesafe.play" %% "play-json"  % PLAY_JSON_VERSION,
-        "mesosphere" %% "service-net-http"  % SERVICE_NET_VERSION,
-        "net.databinder" %% "dispatch-core" % DISPATCH_VERSION
+        "com.typesafe.play"       %% "play-json"        % PLAY_JSON_VERSION,
+        "mesosphere"              %% "service-net-http" % SERVICE_NET_VERSION,
+        "net.databinder.dispatch" %% "dispatch-core"    % DISPATCH_VERSION
       )
     )
-  )
+  ).dependsOn(http)
 
   lazy val config = Project(
     id = subproject("config"),
@@ -93,8 +93,10 @@ object ServiceBridgeBuild extends Build {
     base = file("http"),
     settings = commonSettings ++ Seq(
       libraryDependencies ++= Seq(
+        // the com.typesafe:config exclusions are here because play-json
+        // includes and old version that is incompatible with akka
         "mesosphere"        %% "service-net-http"  % SERVICE_NET_VERSION
-                    exclude("com.typesafe", "config"),
+            exclude("com.typesafe", "config"),
         "com.typesafe.play" %% "play-json"         % PLAY_JSON_VERSION
             exclude("com.typesafe", "config"),
         "net.databinder"    %% "unfiltered-filter" % UNFILTERED_VERSION,
