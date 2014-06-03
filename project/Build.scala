@@ -58,6 +58,18 @@ object ServiceBridgeBuild extends Build {
 
   def subproject(suffix: String) = s"${PROJECT_NAME}-$suffix"
 
+  lazy val client = Project(
+    id = subproject("client"),
+    base = file("client"),
+    settings = commonSettings ++ Seq(
+      libraryDependencies ++= Seq(
+        "com.typesafe.play" %% "play-json"  % PLAY_JSON_VERSION,
+        "mesosphere" %% "service-net-http"  % SERVICE_NET_VERSION,
+        "net.databinder" %% "dispatch-core" % DISPATCH_VERSION
+      )
+    )
+  )
+
   lazy val config = Project(
     id = subproject("config"),
     base = file("config"),

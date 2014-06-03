@@ -26,7 +26,8 @@ class MarathonProtocolSpec extends Spec {
     )
 
     val taskA = MarathonTask(
-      id = "service-a",
+      id = "service-a_1234",
+      appId = "service-a",
       host = "a.corp.org",
       ports = Seq(9001, 9002, 9003),
       healthCheckResults = Seq(
@@ -36,7 +37,8 @@ class MarathonProtocolSpec extends Spec {
     )
 
     val taskB = MarathonTask(
-      id = "service-a",
+      id = "service-a_1235",
+      appId = "service-a",
       host = "b.corp.org",
       ports = Seq(9004, 9005),
       healthCheckResults = Seq(
@@ -82,7 +84,8 @@ class MarathonProtocolSpec extends Spec {
     json should equal (
       JsArray(Seq(
         Json.obj(
-          "id" -> JsString("service-a"),
+          "id" -> JsString("service-a_1234"),
+          "appId" -> JsString("service-a"),
           "host" -> JsString("a.corp.org"),
           "ports" -> Json.toJson(Seq(9001, 9002, 9003)),
           "healthCheckResults" -> JsArray(Seq(
@@ -91,7 +94,8 @@ class MarathonProtocolSpec extends Spec {
           ))
         ),
         Json.obj(
-          "id" -> JsString("service-a"),
+          "id" -> JsString("service-a_1235"),
+          "appId" -> JsString("service-a"),
           "host" -> JsString("b.corp.org"),
           "ports" -> Json.toJson(Seq(9004, 9005)),
           "healthCheckResults" -> JsArray(Seq(
@@ -164,8 +168,8 @@ class MarathonProtocolSpec extends Spec {
     """
 
     val json = Json.parse(rawJson)
-    val taskData = json.validate[TaskData]
-    taskData.get.tasks should have size (2)
+    val readResult = json.validate[TaskData]
+    readResult.get.tasks should have size (2)
   }
 
 }
