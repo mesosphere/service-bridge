@@ -17,6 +17,12 @@ trait HttpService extends Logging {
       .buildGet()
   }
 
+  def delete(hostAndPort: String)(uri: Uri) = {
+    RequestBuilder()
+      .url(uri2url(hostAndPort, uri))
+      .buildDelete()
+  }
+
   def post(hostAndPort: String)(uri: Uri)(postBody: Array[Byte] = Array()) = {
     RequestBuilder()
       .url(uri2url(hostAndPort, uri))

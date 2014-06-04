@@ -41,6 +41,25 @@ class HttpClient(implicit val config: Config = Config()) {
         }
     }
 
+    def unsubscribeFromEvents(callbackUrl: URL) = {
+      client(
+        delete(hostAndPort)("/v2/eventSubscriptions" ? ("callbackUrl" -> callbackUrl))
+      ) flatMap {
+          case response =>
+            response.getStatus match {
+              case OK => Future.value("Ok")
+              case _ =>
+                val status = response.getStatus
+                Future.exception(
+                  new Exception(s"${status.getCode} ${status.getReasonPhrase}")
+                )
+            }
+        } onFailure {
+          case t: Throwable =>
+            log.debug("Error", t)
+        }
+    }
+
     def tasks() = {
       client(get(hostAndPort)("/v2/tasks")) flatMap {
         // TODO: Increment stats for these requests

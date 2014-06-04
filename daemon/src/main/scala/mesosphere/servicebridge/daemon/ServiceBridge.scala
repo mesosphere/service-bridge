@@ -1,6 +1,5 @@
 package mesosphere.servicebridge.daemon
 
-
 import java.net.{ InetAddress, URL }
 import com.twitter.util.Future
 import scala.concurrent.duration.DurationInt
@@ -16,11 +15,11 @@ import mesosphere.servicebridge.http.{
   TaskData
 }
 
-
 object ServiceBridge extends App with Logging {
   implicit val config = Config()
 
   lazy val localHostName = InetAddress.getLocalHost.getCanonicalHostName
+  val callbackUrl = new URL(s"http://$localHostName:${config.httpPort}/bridge")
 
   val doc: Doc = Doc()
 
@@ -50,15 +49,27 @@ object ServiceBridge extends App with Logging {
   val client = new HttpClient()
   val scheduler = PeriodicTaskScheduler()
 
-  client.Marathon.subscribeToEvents(
-    new URL(s"http://$localHostName:${config.httpPort}/bridge")
-  ) onSuccess {
-      case s =>
-        log.info("Successfully registered event callback with marathon")
-    } onFailure {
-      case t: Throwable =>
-        log.error("Failed to register callback", t)
-    }
+  client.Marathon.subscribeToEvents(callbackUrl) onSuccess {
+    case s =>
+      log.debug("Successfully registered event callback with marathon")
+      Runtime.getRuntime.addShutdownHook(new Thread() {
+        override def run() {
+          client.Marathon.unsubscribeFromEvents(callbackUrl) onSuccess {
+            case s =>
+              log.debug("Successfully unregister event callbacks with marathon")
+          } onFailure {
+            case t: Throwable =>
+              log.debug(
+                "Error while trying to unregister event callback with marathon",
+                t
+              )
+          }
+        }
+      })
+  } onFailure {
+    case t: Throwable =>
+      log.error("Failed to register callback", t)
+  }
 
   val task = scheduler.schedule(5000.milliseconds, 15000.milliseconds) {
     Future.join(
