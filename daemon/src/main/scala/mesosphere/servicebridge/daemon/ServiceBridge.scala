@@ -1,90 +1,41 @@
 package mesosphere.servicebridge.daemon
 
-import java.net.{ InetAddress, URL }
-import com.twitter.util.Future
-import scala.concurrent.duration.DurationInt
-
-import mesosphere.servicenet.dsl._
-import mesosphere.servicenet.util.Logging
-
-import mesosphere.servicebridge.client.HttpClient
+import akka.actor.{ Props, ActorSystem }
 import mesosphere.servicebridge.config.Config
-import mesosphere.servicebridge.http.{
-  HTTPServer,
-  MesosStatusUpdateEvent,
-  TaskData
-}
+import mesosphere.servicebridge.client.{ MesosClient, MarathonClient }
 
-object ServiceBridge extends App with Logging {
+object ServiceBridge extends App {
   implicit val config = Config()
 
-  lazy val localHostName = InetAddress.getLocalHost.getCanonicalHostName
-  val callbackUrl = new URL(s"http://$localHostName:${config.httpPort}/bridge")
+  val system = ActorSystem("service-bridge")
+  //  system.logConfiguration()
 
-  val doc: Doc = Doc()
+  val marathonClient = new MarathonClient(config.marathon)
+  val mesosClient = new MesosClient(config.mesos)
 
-  /**
-    * Calculates a Diff from the supplied Doc and event.
-    */
-  def diffFromEvent(doc: Doc, event: MesosStatusUpdateEvent): Diff = {
-    // TODO: construct a meaningful diff here
-    Diff()
-  }
+  val marathonActor = system.actorOf(
+    Props(new MarathonEventSubscriptionActor(marathonClient)),
+    "marathon-event-subscription"
+  )
 
-  /**
-    * Builds a network Doc from the supplied task data.
-    */
-  def docFromTasks(taskData: TaskData): Doc = {
-    // TODO: construct a meaningful doc here
-    Doc()
-  }
+  val httpServer = system.actorOf(
+    Props(new HTTPServerActor(marathonActor)),
+    "http-server"
+  )
 
-  def handleEvent(event: MesosStatusUpdateEvent): Unit = {
-    val diff = diffFromEvent(doc, event)
-    log.info(s"Calculated diff: [$diff]")
-    // ServiceNetConnectionManager.patchAllWith(diff)
-  }
+  val hostTracker = system.actorOf(
+    Props(new HostTracker(mesosClient)),
+    "host-tracker"
+  )
 
-  val http = new HTTPServer(handleEvent)
-  val client = new HttpClient()
-  val scheduler = PeriodicTaskScheduler()
+  val taskTracker = system.actorOf(
+    Props(new TaskTracker(marathonClient, hostTracker)),
+    "task-tracker"
+  )
 
-  client.Marathon.subscribeToEvents(callbackUrl) onSuccess {
-    case s =>
-      log.debug("Successfully registered event callback with marathon")
-      Runtime.getRuntime.addShutdownHook(new Thread() {
-        override def run() {
-          client.Marathon.unsubscribeFromEvents(callbackUrl) onSuccess {
-            case s =>
-              log.debug("Successfully unregister event callbacks with marathon")
-          } onFailure {
-            case t: Throwable =>
-              log.debug(
-                "Error while trying to unregister event callback with marathon",
-                t
-              )
-          }
-        }
-      })
-  } onFailure {
-    case t: Throwable =>
-      log.error("Failed to register callback", t)
-  }
+  Runtime.getRuntime.addShutdownHook(new Thread() {
+    override def run() = system.shutdown()
+  })
 
-  val task = scheduler.schedule(5000.milliseconds, 15000.milliseconds) {
-    Future.join(
-      client.getMesosClusterMembers,
-      client.getAppTasks
-    ) onSuccess {
-        case (clusterMembers, tasks) =>
-          log.info("clusterMembers = {}", clusterMembers)
-          log.info("tasks = {}", tasks)
-      } onFailure {
-        case t: Throwable =>
-          log.info("I can recover from this", t)
-      }
-  }
-  log.info("task = {}", task)
-
-  http.run()
+  system.awaitTermination()
 }
