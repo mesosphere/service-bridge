@@ -34,8 +34,10 @@ sealed class PeriodicTaskScheduler extends Logging {
     * @return Returns a `Cancellable` that allows for the client to cancel a task
     *         as well as test if the task has been canceled.
     */
-  def schedule(interval: FiniteDuration)(f: => Unit): Cancellable =
+  def schedule(interval: FiniteDuration)(f: => Unit): Cancellable = {
+    log.debug(s"schedule(interval = $interval)(f = $f)")
     schedule(interval, interval)(f)
+  }
 
   /**
     * Schedule a task to run at the specified `interval` following the first
@@ -46,8 +48,10 @@ sealed class PeriodicTaskScheduler extends Logging {
     * @return Returns a `Cancellable` that allows for the client to cancel a task
     *         as well as test if the task has been canceled.
     */
-  def schedule(initialDelay: FiniteDuration, interval: FiniteDuration)(f: => Unit): Cancellable =
+  def schedule(initialDelay: FiniteDuration, interval: FiniteDuration)(f: => Unit): Cancellable = {
+    log.debug(s"schedule(initialDelay = $initialDelay, interval = $interval)(f = $f)")
     scheduler.schedule(initialDelay, interval)(f)
+  }
 
   /**
     * Schedule a task to run after some `delay`
@@ -56,8 +60,10 @@ sealed class PeriodicTaskScheduler extends Logging {
     * @return Returns a `Cancellable` that allows for the client to cancel a task
     *         as well as test if the task has been canceled.
     */
-  def scheduleOnce(delay: FiniteDuration)(f: => Unit): Cancellable =
+  def scheduleOnce(delay: FiniteDuration)(f: => Unit): Cancellable = {
+    log.debug(s"scheduleOnce(delay = $delay)(f = $f)")
     scheduler.scheduleOnce(delay)(f)
+  }
 }
 
 object PeriodicTaskScheduler extends Logging {
