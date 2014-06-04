@@ -38,7 +38,7 @@ class HTTPServer(handleEvent: MesosStatusUpdateEvent => Unit = _ => ())(
                 ResponseString(JsError.toFlatJson(error).toString)
           }
 
-        case _ => BadRequest ~> ResponseString("Must be PUT")
+        case _ => BadRequest ~> ResponseString("Must be POST")
       }
 
       case _ => NotFound ~> ResponseString("Not found")
