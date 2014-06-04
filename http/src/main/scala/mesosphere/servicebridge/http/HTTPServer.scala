@@ -36,7 +36,7 @@ class HTTPServer(handleEvent: MesosStatusUpdateEvent => Unit = _ => ())(
 
             case error: JsError =>
               val errorJson = JsError.toFlatJson(error).toString()
-              log.warn(
+              log.info(
                 s"Ignoring event [${requestJson.toString()}] " +
                   s"Unexpected Json Format: [$errorJson]"
               )

@@ -48,7 +48,7 @@ class HostTracker(mesos: MesosClient) extends Actor with ActorLogging {
           val newTrackedHost = hostname ->
             context.system.actorOf(
               Props(new ServiceNetDocPublisher(hostname)),
-              s"host-publisher-$hostname"
+              s"service-net-doc-publisher-$hostname"
             )
           trackedHosts + newTrackedHost
       }
