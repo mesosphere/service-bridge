@@ -17,6 +17,6 @@ case class MarathonTask(id: String,
                         appId: String,
                         host: String,
                         ports: Seq[Int],
-                        healthCheckResults: Seq[TaskHealth])
+                        healthCheckResults: Option[Seq[TaskHealth]])
 
 case class TaskData(tasks: Seq[MarathonTask])
