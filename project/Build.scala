@@ -129,6 +129,7 @@ object ServiceBridgeBuild extends Build {
 
     resolvers ++= Seq(
       "Mesosphere Repo"     at "http://downloads.mesosphere.io/maven",
+      "Twitter"             at "http://maven.twttr.com/",
       "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
     ),
 
