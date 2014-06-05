@@ -10,25 +10,24 @@ class ServiceBridgeSupervisor(implicit config: Config = Config())
 
   val marathonClient = new MarathonClient(config.marathon)
   val mesosClient = new MesosClient(config.mesos)
-  lazy val system = context.system
 
   override def preStart(): Unit = {
-    val marathonActor = system.actorOf(
+    val marathonActor = context.actorOf(
       Props(new MarathonEventSubscriptionActor(marathonClient)),
       "marathon-event-subscription"
     )
 
-    val httpServer = system.actorOf(
+    val httpServer = context.actorOf(
       Props(new HTTPServerActor(marathonActor)),
       "http-server"
     )
 
-    val hostTracker = system.actorOf(
+    val hostTracker = context.actorOf(
       Props(new HostTracker(mesosClient)),
       "host-tracker"
     )
 
-    val taskTracker = system.actorOf(
+    val taskTracker = context.actorOf(
       Props(new TaskTracker(marathonClient, hostTracker)),
       "task-tracker"
     )
