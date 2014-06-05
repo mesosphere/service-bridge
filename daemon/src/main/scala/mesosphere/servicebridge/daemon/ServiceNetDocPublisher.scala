@@ -13,11 +13,11 @@ class ServiceNetDocPublisher(hostname: String)
     with DocProtocol {
 
   override def preStart() = {
-    log.info("starting") // TODO: Debug
+    log.debug("starting")
   }
 
   override def postStop() = {
-    log.info("stopped") // TODO: Debug
+    log.debug("stopped")
   }
 
   def receive = {

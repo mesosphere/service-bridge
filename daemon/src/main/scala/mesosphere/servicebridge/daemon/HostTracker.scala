@@ -53,7 +53,7 @@ class HostTracker(mesos: MesosClient) extends Actor with ActorLogging {
           trackedHosts + newTrackedHost
       }
 
-      log.info("hosts = {}", clusterMembers)
+      log.debug("hosts = {}", clusterMembers)
       hosts = cleanedAndAdded
     case p: PublishDoc =>
       hosts.foreach {

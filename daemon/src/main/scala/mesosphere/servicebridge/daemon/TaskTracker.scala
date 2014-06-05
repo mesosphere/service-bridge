@@ -17,6 +17,7 @@ class TaskTracker(marathon: MarathonClient, hostTracker: ActorRef)
   var scheduledRefreshTask: Option[Cancellable] = None
 
   override def preStart(): Unit = {
+    log.debug("Starting")
     scheduledRefreshTask = Some(
       context.system.scheduler.schedule(
         5.milliseconds,
@@ -29,12 +30,13 @@ class TaskTracker(marathon: MarathonClient, hostTracker: ActorRef)
 
   override def postStop(): Unit = {
     scheduledRefreshTask.map { _.cancel() }
+    log.debug("Stopped")
   }
 
   def receive = {
     case Refresh =>
       val runningTasks = Await.result(marathon.getAppTasks)
-      log.info("tasks = {}", runningTasks)
+      log.debug("tasks = {}", runningTasks)
       hostTracker ! PublishDoc(Doc())
   }
 }
