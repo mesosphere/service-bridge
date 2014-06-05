@@ -1,14 +1,18 @@
 package mesosphere.servicebridge.daemon
 
 import akka.actor._
-import com.twitter.util.Await
-import mesosphere.servicebridge.client.MesosClient
-import scala.concurrent.duration.DurationDouble
+import com.twitter.util.Future
 import scala.Some
+import scala.concurrent.duration.DurationDouble
 
-case object ReloadHosts
+import mesosphere.servicebridge.client.MesosClient
 
-class HostTracker(mesos: MesosClient) extends Actor with ActorLogging {
+case class TrackHost(hostname: String)
+case class UntrackHost(hostname: String)
+
+class HostTracker(mesos: MesosClient) extends Actor with ActorLogging with Tracker {
+  val me = this
+
   import context._ // needed for executionContext for scheduler
 
   var hosts: Map[String, ActorRef] = Map()
@@ -17,7 +21,7 @@ class HostTracker(mesos: MesosClient) extends Actor with ActorLogging {
   override def preStart(): Unit = {
     scheduledRefreshTask = Some(
       context.system.scheduler.schedule(
-        5.milliseconds,
+        10000.milliseconds,
         10000.milliseconds,
         self,
         Refresh
@@ -29,36 +33,42 @@ class HostTracker(mesos: MesosClient) extends Actor with ActorLogging {
     scheduledRefreshTask.map { _.cancel() }
   }
 
+  override def serviceName: String = "Mesos"
+
   def receive = {
     case Refresh =>
-      val clusterMembers = Await.result(mesos.getMesosClusterMembers).toSet
-      val hostsCopy = hosts
-
-      val toCreate = clusterMembers.filterNot { hostsCopy.keySet.contains }
-      val toRemove = hostsCopy.keySet.filterNot { clusterMembers.contains }
-
-      val cleaned = toRemove.foldLeft(hostsCopy) {
-        (trackedHosts, hostname) =>
-          context.stop(trackedHosts(hostname))
-          trackedHosts - hostname
+      val f = Future.join(
+        mesos.getMesosClusterMembers,
+        Future.value(hosts)
+      ) flatMap { case (clusterMembers, trackedHosts) =>
+        val toCreate = clusterMembers.filterNot { trackedHosts.keySet.contains }
+        val toRemove = trackedHosts.keySet.filterNot { clusterMembers.contains }
+        Future.value(toCreate, toRemove)
       }
 
-      val cleanedAndAdded = toCreate.foldLeft(cleaned) {
-        (trackedHosts, hostname) =>
-          val newTrackedHost = hostname ->
-            context.system.actorOf(
-              Props(new ServiceNetDocPublisher(hostname)),
-              s"service-net-doc-publisher-$hostname"
-            )
-          trackedHosts + newTrackedHost
+      tryOnFuture(f) { case (toCreate, toRemove) =>
+        toCreate.foreach { self ! TrackHost(_) }
+        toRemove.foreach { self ! UntrackHost(_) }
       }
-
-      log.debug("hosts = {}", clusterMembers)
-      hosts = cleanedAndAdded
+      log.debug("hosts = {}", hosts)
     case p: PublishDoc =>
       hosts.foreach {
         case (hostname, actor) =>
           actor.forward(p)
       }
+    case TrackHost(hostname) =>
+      hosts += hostname ->
+        context.actorOf(
+          Props(new ServiceNetDocPublisher(hostname)),
+          s"service-net-doc-publisher-$hostname"
+        )
+    case UntrackHost(hostname) =>
+      hosts.get(hostname) match {
+        case Some(actorRef) =>
+          context.stop(actorRef)
+          hosts -= hostname
+        case None => // no-o not host tracked by that name
+      }
   }
+
 }

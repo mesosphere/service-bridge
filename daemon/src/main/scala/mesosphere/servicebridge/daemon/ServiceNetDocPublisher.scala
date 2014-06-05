@@ -12,14 +12,6 @@ class ServiceNetDocPublisher(hostname: String)
     with ActorLogging
     with DocProtocol {
 
-  override def preStart() = {
-    log.debug("starting")
-  }
-
-  override def postStop() = {
-    log.debug("stopped")
-  }
-
   def receive = {
     case PublishDoc(doc) =>
       val jsonString = Json.toJson(doc).toString()
