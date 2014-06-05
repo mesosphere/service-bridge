@@ -1,7 +1,6 @@
 package mesosphere.servicebridge.client
 
 import com.github.theon.uri.Uri._
-import com.twitter.finagle.Http
 import com.twitter.util.Future
 import java.net.URL
 import org.jboss.netty.handler.codec.http.HttpResponse
@@ -17,7 +16,7 @@ class MarathonClient(servers: String)
     extends HttpService with MarathonProtocol with Logging {
 
   val hostAndPort = servers.split(',').head
-  lazy val client = Http.newService(servers)
+  lazy val client = new HttpServiceClient(servers)
 
   /**
     * Returns a mapping from app names to tasks
@@ -35,25 +34,18 @@ class MarathonClient(servers: String)
   }
 
   def subscribeToEvents(callbackUrl: URL) = {
-    client(
-      post(hostAndPort)("/v2/eventSubscriptions" ? ("callbackUrl" -> callbackUrl))()
-    ) flatMap subscriptionFilter onFailure {
-        case t: Throwable =>
-          log.debug("Error", t)
-      }
+    val r = post(hostAndPort)("/v2/eventSubscriptions" ? ("callbackUrl" -> callbackUrl))()
+    client(r) flatMap subscriptionFilter
   }
 
   def unsubscribeFromEvents(callbackUrl: URL) = {
-    client(
-      delete(hostAndPort)("/v2/eventSubscriptions" ? ("callbackUrl" -> callbackUrl))
-    ) flatMap subscriptionFilter onFailure {
-        case t: Throwable =>
-          log.debug("Error", t)
-      }
+    val r = delete(hostAndPort)("/v2/eventSubscriptions" ? ("callbackUrl" -> callbackUrl))
+    client(r) flatMap subscriptionFilter
   }
 
   private[client] def tasks() = {
-    client(get(hostAndPort)("/v2/tasks")) flatMap {
+    val r = get(hostAndPort)("/v2/tasks")
+    client(r) flatMap {
       // TODO: Increment stats for these requests
       case response =>
         response.getStatus match {
@@ -65,13 +57,10 @@ class MarathonClient(servers: String)
             Future.value(opt)
           case _ => Future.value(None)
         }
-    } onFailure {
-      case t: Throwable =>
-        log.debug("Error", t)
     }
   }
 
-  def subscriptionFilter(response: HttpResponse): Future[String] = {
+  private[this] def subscriptionFilter(response: HttpResponse): Future[String] = {
     response.getStatus match {
       case OK => Future.value("Ok")
       case _ =>

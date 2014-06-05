@@ -1,6 +1,5 @@
 package mesosphere.servicebridge.client
 
-import com.twitter.finagle.Http
 import com.twitter.util.Future
 import org.jboss.netty.handler.codec.http.HttpResponseStatus._
 import org.jboss.netty.util.CharsetUtil
@@ -14,7 +13,7 @@ class MesosClient(servers: String)
     extends HttpService with MesosProtocol with Logging {
 
   val hostAndPort = servers.split(',').head
-  lazy val client = Http.newService(servers)
+  lazy val client = new HttpServiceClient(servers)
 
   def getMesosClusterMembers: Future[Seq[String]] = {
     state() flatMap {
@@ -39,9 +38,6 @@ class MesosClient(servers: String)
             Future.value(opt)
           case _ => Future.value(None)
         }
-    } onFailure {
-      case t: Throwable =>
-        log.debug("Error", t)
     }
   }
 }
