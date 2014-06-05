@@ -2,7 +2,7 @@ package mesosphere.servicebridge.daemon
 
 import akka.actor.{ ActorLogging, Actor }
 import org.slf4j.bridge.SLF4JBridgeHandler
-import java.util.logging.{Level, LogManager}
+import java.util.logging.{ Level, LogManager }
 
 class Slf4jConfigActor extends Actor with ActorLogging {
 
