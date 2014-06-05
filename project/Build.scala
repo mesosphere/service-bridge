@@ -88,7 +88,11 @@ object ServiceBridgeBuild extends Build {
       libraryDependencies ++= Seq(
         "com.typesafe.akka" %% "akka-actor"     % AKKA_VERSION,
         "com.typesafe.akka" %% "akka-slf4j"     % AKKA_VERSION,
-        "com.typesafe.akka" %% "akka-testkit"   % AKKA_VERSION % "test"
+        "com.typesafe.akka" %% "akka-testkit"   % AKKA_VERSION % "test",
+
+        "org.slf4j" % "jul-to-slf4j"      % SLF4J_VERSION,
+        "org.slf4j" % "jcl-over-slf4j"    % SLF4J_VERSION,
+        "org.slf4j" % "log4j-over-slf4j"  % SLF4J_VERSION
       )
     )
   ).dependsOn(config, http, client)

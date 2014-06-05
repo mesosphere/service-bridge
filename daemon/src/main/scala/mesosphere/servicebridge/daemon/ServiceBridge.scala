@@ -8,6 +8,9 @@ object ServiceBridge extends App {
   implicit val config = Config()
 
   val system = ActorSystem("service-bridge")
+  val slf4jConfigActor = system.actorOf(
+    Props(new Slf4jConfigActor)
+  )
   //  system.logConfiguration()
 
   val marathonClient = new MarathonClient(config.marathon)
