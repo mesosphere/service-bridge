@@ -2,7 +2,6 @@ package mesosphere.servicebridge.daemon
 
 import akka.actor.{ Props, ActorSystem }
 import mesosphere.servicebridge.config.Config
-import mesosphere.servicebridge.client.{ MesosClient, MarathonClient }
 
 object ServiceBridge extends App {
   implicit val config = Config()
@@ -13,27 +12,9 @@ object ServiceBridge extends App {
   )
   //  system.logConfiguration()
 
-  val marathonClient = new MarathonClient(config.marathon)
-  val mesosClient = new MesosClient(config.mesos)
-
-  val marathonActor = system.actorOf(
-    Props(new MarathonEventSubscriptionActor(marathonClient)),
-    "marathon-event-subscription"
-  )
-
-  val httpServer = system.actorOf(
-    Props(new HTTPServerActor(marathonActor)),
-    "http-server"
-  )
-
-  val hostTracker = system.actorOf(
-    Props(new HostTracker(mesosClient)),
-    "host-tracker"
-  )
-
-  val taskTracker = system.actorOf(
-    Props(new TaskTracker(marathonClient, hostTracker)),
-    "task-tracker"
+  val serviceBridgeSupervisor = system.actorOf(
+    Props(new ServiceBridgeSupervisor),
+    "service-bridge-supervisor"
   )
 
   Runtime.getRuntime.addShutdownHook(new Thread() {
