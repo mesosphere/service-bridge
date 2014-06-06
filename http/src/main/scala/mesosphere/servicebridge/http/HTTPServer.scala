@@ -16,6 +16,8 @@ class HTTPServer(handleEvent: MesosStatusUpdateEvent => Unit = _ => ())(
     extends MarathonProtocol
     with Logging {
 
+  private[this] val server = Http(config.httpPort).filter(RestRoutes)
+
   object RestRoutes extends unfiltered.filter.Plan {
     def intent = {
       case req @ Path(Seg("bridge" :: Nil)) => req match {
@@ -23,8 +25,8 @@ class HTTPServer(handleEvent: MesosStatusUpdateEvent => Unit = _ => ())(
           val requestJson = Json.parse(Body.bytes(req))
           requestJson.validate[MesosStatusUpdateEvent] match {
             case JsSuccess(e, path) if e.eventType == "status_update_event" =>
-              val eventJson = Json.toJson(e).toString
-              log.info(s"Received status update event [$eventJson]")
+              val eventJson = Json.toJson(e).toString()
+              log.debug(s"Received status update event [$eventJson]")
 
               // delegate handling of Marathon event
               handleEvent(e)
@@ -33,23 +35,29 @@ class HTTPServer(handleEvent: MesosStatusUpdateEvent => Unit = _ => ())(
                 ResponseString(eventJson)
 
             case error: JsError =>
-              log.info(s"Ignoring event [${requestJson.toString}]")
+              val errorJson = JsError.toFlatJson(error).toString()
+              log.info(
+                s"Ignoring event [${requestJson.toString()}] " +
+                  s"Unexpected Json Format: [$errorJson]"
+              )
               ResponseHeader("Content-Type", Set("application/json")) ~>
-                ResponseString(JsError.toFlatJson(error).toString)
+                ResponseString(errorJson)
           }
 
-        case _ => BadRequest ~> ResponseString("Must be PUT")
+        case _ => BadRequest ~> ResponseString("Must be POST")
       }
 
       case _ => NotFound ~> ResponseString("Not found")
     }
   }
 
-  def run(port: Int = config.httpPort) {
-    Http(port).filter(RestRoutes).run
+  def start() {
+    // use start rather than run here because we're managing the lifecycle of
+    // the server with akka
+    server.start()
   }
-}
 
-object HTTPServer extends App {
-  (new HTTPServer).run()
+  def stop() {
+    server.stop()
+  }
 }

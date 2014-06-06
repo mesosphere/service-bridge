@@ -82,7 +82,7 @@ object Config extends Logging {
   def apply(properties: Map[String, String] = merged): Config =
     Config(
       httpPort = properties.get("http.port").map(_.toInt).getOrElse(9000),
-      marathon = properties.get("marathon").getOrElse("localhost:2181"),
+      marathon = properties.get("marathon").getOrElse("localhost:8080"),
       mesos = properties.get("mesos").getOrElse("localhost:5050")
     )
 }

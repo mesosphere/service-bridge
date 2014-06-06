@@ -30,10 +30,10 @@ class MarathonProtocolSpec extends Spec {
       appId = "service-a",
       host = "a.corp.org",
       ports = Seq(9001, 9002, 9003),
-      healthCheckResults = Seq(
-        TaskHealth(true),
-        TaskHealth(true)
-      )
+      healthCheckResults = Some(Seq(
+        TaskHealth(alive = true),
+        TaskHealth(alive = true)
+      ))
     )
 
     val taskB = MarathonTask(
@@ -41,10 +41,10 @@ class MarathonProtocolSpec extends Spec {
       appId = "service-a",
       host = "b.corp.org",
       ports = Seq(9004, 9005),
-      healthCheckResults = Seq(
-        TaskHealth(false),
-        TaskHealth(true)
-      )
+      healthCheckResults = Some(Seq(
+        TaskHealth(alive = false),
+        TaskHealth(alive = true)
+      ))
     )
   }
 
@@ -169,7 +169,32 @@ class MarathonProtocolSpec extends Spec {
 
     val json = Json.parse(rawJson)
     val readResult = json.validate[TaskData]
-    readResult.get.tasks should have size (2)
+    readResult.get.tasks should have size 2
+  }
+
+  it should "read TaskData Marathon output with no healthCheckResults" in {
+
+    val rawJson = """
+      {
+          "tasks": [
+              {
+                  "appId": "web",
+                  "host": "localhost",
+                  "id": "web_1-1401330824836",
+                  "ports": [
+                      31972
+                  ],
+                  "stagedAt": "2014-05-29T02:33:44.837Z",
+                  "startedAt": "2014-05-29T02:33:45.550Z",
+                  "version": "2014-05-29T02:32:45.172Z"
+              }
+          ]
+      }
+    """
+
+    val json = Json.parse(rawJson)
+    val readResult = json.validate[TaskData]
+    readResult.get.tasks should have size 1
   }
 
 }

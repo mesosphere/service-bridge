@@ -28,13 +28,14 @@ object ServiceBridgeBuild extends Build {
 
   val AKKA_VERSION            = "2.3.2"
   val DISPATCH_VERSION        = "0.11.1"
+  val FINAGLE_VERSION         = "6.16.0"
   val LOGBACK_VERSION         = "1.1.2"
   val PLAY_JSON_VERSION       = "2.2.3"
+  val SCALA_URI_VERSION       = "0.3.6"
   val SCALATEST_VERSION       = "2.1.5"
   val SERVICE_NET_VERSION     = "0.1.0-SNAPSHOT"
   val SLF4J_VERSION           = "1.7.6"
   val UNFILTERED_VERSION      = "0.7.1"
-
 
   //////////////////////////////////////////////////////////////////////////////
   // PROJECTS
@@ -53,8 +54,8 @@ object ServiceBridgeBuild extends Build {
       ) ++
       assemblySettings ++
       graphSettings
-  ).dependsOn(config, daemon, http)
-   .aggregate(config, daemon, http)
+  ).dependsOn(config, daemon, http, client)
+   .aggregate(config, daemon, http, client)
 
   def subproject(suffix: String) = s"${PROJECT_NAME}-$suffix"
 
@@ -65,7 +66,11 @@ object ServiceBridgeBuild extends Build {
       libraryDependencies ++= Seq(
         "com.typesafe.play"       %% "play-json"        % PLAY_JSON_VERSION,
         "mesosphere"              %% "service-net-http" % SERVICE_NET_VERSION,
-        "net.databinder.dispatch" %% "dispatch-core"    % DISPATCH_VERSION
+        "net.databinder.dispatch" %% "dispatch-core"    % DISPATCH_VERSION,
+
+        "com.twitter"       %% "finagle-http"      % FINAGLE_VERSION,
+        "com.twitter"       %% "finagle-stats"     % FINAGLE_VERSION,
+        "com.github.theon"  %% "scala-uri"         % SCALA_URI_VERSION
       )
     )
   ).dependsOn(http)
@@ -83,10 +88,14 @@ object ServiceBridgeBuild extends Build {
       libraryDependencies ++= Seq(
         "com.typesafe.akka" %% "akka-actor"     % AKKA_VERSION,
         "com.typesafe.akka" %% "akka-slf4j"     % AKKA_VERSION,
-        "com.typesafe.akka" %% "akka-testkit"   % AKKA_VERSION % "test"
+        "com.typesafe.akka" %% "akka-testkit"   % AKKA_VERSION % "test",
+
+        "org.slf4j" % "jul-to-slf4j"      % SLF4J_VERSION,
+        "org.slf4j" % "jcl-over-slf4j"    % SLF4J_VERSION,
+        "org.slf4j" % "log4j-over-slf4j"  % SLF4J_VERSION
       )
     )
-  ).dependsOn(config, http)
+  ).dependsOn(config, http, client)
 
   lazy val http = Project(
     id = subproject("http"),
@@ -124,6 +133,7 @@ object ServiceBridgeBuild extends Build {
 
     resolvers ++= Seq(
       "Mesosphere Repo"     at "http://downloads.mesosphere.io/maven",
+      "Twitter"             at "http://maven.twttr.com/",
       "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
     ),
 
