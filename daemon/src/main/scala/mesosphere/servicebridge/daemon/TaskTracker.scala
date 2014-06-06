@@ -1,23 +1,27 @@
 package mesosphere.servicebridge.daemon
 
-import akka.actor.{ ActorRef, Cancellable, ActorLogging, Actor }
+import akka.actor._
 import scala.concurrent.duration.DurationLong
 
 import mesosphere.servicebridge.client.MarathonClient
 import mesosphere.servicenet.dsl.Doc
+import mesosphere.servicenet.dsl.Doc
+import scala.Some
 
-class TaskTracker(marathon: MarathonClient, hostTracker: ActorRef)
-    extends Actor with ActorLogging with Tracker {
-  val me = this
-
+class TaskTracker(marathon: MarathonClient) extends Actor with ActorLogging {
   import context._ // needed for executionContext for scheduler
 
   var scheduledRefreshTask: Option[Cancellable] = None
 
+  val poller = context.actorOf(
+    Props(new TaskTrackerPoller(marathon)),
+    "task-tracker-poller"
+  )
+
   override def preStart(): Unit = {
     log.debug("Starting")
     scheduledRefreshTask = Some(
-      context.system.scheduler.schedule(
+      system.scheduler.schedule(
         10000.milliseconds,
         10000.milliseconds,
         self,
@@ -31,6 +35,13 @@ class TaskTracker(marathon: MarathonClient, hostTracker: ActorRef)
     log.debug("Stopped")
   }
 
+  def receive = {
+    case Refresh => poller.forward(Refresh)
+  }
+}
+
+class TaskTrackerPoller(marathon: MarathonClient)
+    extends Actor with ActorLogging with Poller {
   override def serviceName: String = "Marathon"
 
   def receive = {
@@ -38,7 +49,6 @@ class TaskTracker(marathon: MarathonClient, hostTracker: ActorRef)
       tryOnFuture(marathon.getAppTasks) {
         case runningTasks =>
           log.debug("tasks = {}", runningTasks)
-          hostTracker ! PublishDoc(Doc())
       }
   }
 }

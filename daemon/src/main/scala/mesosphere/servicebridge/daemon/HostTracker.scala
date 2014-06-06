@@ -10,17 +10,20 @@ import mesosphere.servicebridge.client.MesosClient
 case class TrackHost(hostname: String)
 case class UntrackHost(hostname: String)
 
-class HostTracker(mesos: MesosClient) extends Actor with ActorLogging with Tracker {
-  val me = this
-
+class HostTracker(mesos: MesosClient) extends Actor with ActorLogging {
   import context._ // needed for executionContext for scheduler
 
   var hosts: Map[String, ActorRef] = Map()
   var scheduledRefreshTask: Option[Cancellable] = None
 
+  val poller = context.actorOf(
+    Props(new HostTrackerPoller(mesos)),
+    "host-tracker-poller"
+  )
+
   override def preStart(): Unit = {
     scheduledRefreshTask = Some(
-      context.system.scheduler.schedule(
+      system.scheduler.schedule(
         10000.milliseconds,
         10000.milliseconds,
         self,
@@ -33,24 +36,8 @@ class HostTracker(mesos: MesosClient) extends Actor with ActorLogging with Track
     scheduledRefreshTask.map { _.cancel() }
   }
 
-  override def serviceName: String = "Mesos"
-
   def receive = {
-    case Refresh =>
-      val f = Future.join(
-        mesos.getMesosClusterMembers,
-        Future.value(hosts)
-      ) flatMap { case (clusterMembers, trackedHosts) =>
-        val toCreate = clusterMembers.filterNot { trackedHosts.keySet.contains }
-        val toRemove = trackedHosts.keySet.filterNot { clusterMembers.contains }
-        Future.value(toCreate, toRemove)
-      }
-
-      tryOnFuture(f) { case (toCreate, toRemove) =>
-        toCreate.foreach { self ! TrackHost(_) }
-        toRemove.foreach { self ! UntrackHost(_) }
-      }
-      log.debug("hosts = {}", hosts)
+    case Refresh => poller ! RefreshHosts(hosts.keySet)
     case p: PublishDoc =>
       hosts.foreach {
         case (hostname, actor) =>
@@ -70,5 +57,29 @@ class HostTracker(mesos: MesosClient) extends Actor with ActorLogging with Track
         case None => // no-o not host tracked by that name
       }
   }
+}
 
+case class RefreshHosts(currentHosts: Set[String])
+class HostTrackerPoller(mesos: MesosClient) extends Actor with ActorLogging with Poller {
+  override def serviceName: String = "Mesos"
+
+  def receive = {
+    case RefreshHosts(hosts) =>
+      val f = Future.join(
+        mesos.getMesosClusterMembers,
+        Future.value(hosts)
+      ) flatMap {
+          case (clusterMembers, trackedHosts) =>
+            val toCreate = clusterMembers.filterNot { trackedHosts.contains }
+            val toRemove = trackedHosts.filterNot { clusterMembers.contains }
+            Future.value(toCreate, toRemove)
+        }
+
+      tryOnFuture(f) {
+        case (toCreate, toRemove) =>
+          toCreate.foreach { sender ! TrackHost(_) }
+          toRemove.foreach { sender ! UntrackHost(_) }
+      }
+      log.debug("hosts = {}", hosts)
+  }
 }

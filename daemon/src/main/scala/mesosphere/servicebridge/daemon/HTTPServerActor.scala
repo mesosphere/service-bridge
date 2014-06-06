@@ -1,12 +1,13 @@
 package mesosphere.servicebridge.daemon
 
-import akka.actor.{ ActorRef, Actor, ActorLogging }
-import mesosphere.servicebridge.http.{ MesosStatusUpdateEvent, HTTPServer }
+import akka.actor.{ Actor, ActorLogging }
 import mesosphere.servicebridge.config.Config
+import mesosphere.servicebridge.http.{ MesosStatusUpdateEvent, HTTPServer }
 
-class HTTPServerActor(marathonEventSubscriptionActor: ActorRef)(
+class HTTPServerActor(
   implicit val config: Config = Config())
     extends Actor with ActorLogging {
+  import context._
 
   val server = new HTTPServer(onMarathonEvent)
 
@@ -23,6 +24,6 @@ class HTTPServerActor(marathonEventSubscriptionActor: ActorRef)(
   }
 
   def onMarathonEvent(e: MesosStatusUpdateEvent): Unit = {
-    marathonEventSubscriptionActor ! e
+    parent ! e
   }
 }

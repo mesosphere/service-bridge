@@ -1,12 +1,12 @@
 package mesosphere.servicebridge.client
 
-import org.jboss.netty.handler.codec.http.{HttpResponse, HttpRequest}
-import com.twitter.finagle.{FailedFastException, Http, Service}
+import org.jboss.netty.handler.codec.http.{ HttpResponse, HttpRequest }
+import com.twitter.finagle.{ FailedFastException, Http, Service }
 import com.twitter.util.Future
 import mesosphere.servicenet.util.Logging
 
-class HttpServiceClient(servers: String) 
-  extends Service[HttpRequest, HttpResponse] with Logging {
+class HttpServiceClient(servers: String)
+    extends Service[HttpRequest, HttpResponse] with Logging {
   val service = Http.newService(servers)
 
   override def apply(req: HttpRequest): Future[HttpResponse] = {
